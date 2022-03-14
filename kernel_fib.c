@@ -34,8 +34,8 @@ int main(int argc, char **argv)
         for (int n = 0; n < sample_size; n++) { /* sampling */
             /* get the runtime in kernel space here */
             read(fd, write_buf, func);
-            t[n] = (double) write(fd, write_buf, func); /* recursion */
-            mean += t[n];                               /* sum */
+            t[n] = (double) write(fd, write_buf, func);
+            mean += t[n]; /* sum */
         }
         mean /= sample_size; /* mean */
 

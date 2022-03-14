@@ -16,6 +16,9 @@ $(GIT_HOOKS):
 	@scripts/install-git-hooks
 	@echo
 
+clean_png:
+	$(RM) *.png
+
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
 	$(RM) client out
@@ -45,5 +48,3 @@ check: all
 	$(MAKE) unload
 	@diff -u out scripts/expected.txt && $(call pass)
 	@scripts/verify.py
-
-
