@@ -40,7 +40,7 @@ static long long fib_sequence(long long k)
     return f[k];
 }
 
-static long long fib_fast_doubly_sequence(long long k)
+static long long fib_fast_doubling_sequence(long long k)
 {
     unsigned int h = 0;
     for (unsigned int i = k; i; ++h, i >>= 1)
@@ -65,8 +65,29 @@ static long long fib_fast_doubly_sequence(long long k)
     return f[0];
 }
 
-static long long (*fib_func[])(long long) = {fib_sequence,
-                                             fib_fast_doubly_sequence};
+static long long fib_fast_doubling_sequence_clz(long long k)
+{
+    long long f[2];
+
+    f[0] = 0;
+    f[1] = 1;
+
+    for (long long mask = 1 << (31 - __builtin_clz(k)); mask; mask >>= 1) {
+        long long a = f[0] * (2 * f[1] - f[0]);
+        long long b = f[0] * f[0] + f[1] * f[1];
+        if (mask & k) {
+            f[0] = b;
+            f[1] = a + b;
+        } else {
+            f[0] = a;
+            f[1] = b;
+        }
+    }
+    return f[0];
+}
+
+static long long (*fib_func[])(long long) = {
+    fib_sequence, fib_fast_doubling_sequence, fib_fast_doubling_sequence_clz};
 
 static long long fib_time_proxy(long long k, size_t func_count)
 {

@@ -21,15 +21,15 @@ make load
 sudo taskset -c $CPUID ./kernel_fib 0 > kernel_fib.txt
 sudo taskset -c $CPUID ./client_time 0 > client_time.txt
 sudo taskset -c $CPUID ./kernel_fib 1 > kernel_fib_fast_doubling_longlong.txt
+sudo taskset -c $CPUID ./kernel_fib 2 > kernel_fib_fast_doubling_longlong_clz.txt
 gnuplot scripts/kernel_fib_sequence.gp
 gnuplot scripts/client_kernel_statistic.gp
 gnuplot scripts/cmp_doublyfast_fibsequence_longlong.gp
+gnuplot scripts/cmp_clz_fast_doubling_longlong.gp
 make unload
 rm kernel_fib
-rm kernel_fib.txt
 rm client_time
-rm client_time.txt
-rm kernel_fib_fast_doubling_longlong.txt
+rm *.txt
 make clean
 
 #restore the original system settings
