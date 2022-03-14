@@ -27,6 +27,12 @@ unload:
 client: client.c
 	$(CC) -o $@ $^
 
+kernel_fib: kernel_fib.c
+	$(CC) -o $@ $^ -lm
+
+client_time: client_time.c
+	$(CC) -o $@ $^ -lm
+
 PRINTF = env printf
 PASS_COLOR = \e[32;01m
 NO_COLOR = \e[0m
@@ -39,3 +45,5 @@ check: all
 	$(MAKE) unload
 	@diff -u out scripts/expected.txt && $(call pass)
 	@scripts/verify.py
+
+

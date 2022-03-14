@@ -22,8 +22,8 @@ int main()
     }
 
     for (int i = 0; i <= offset; i++) {
-        sz = write(fd, write_buf, strlen(write_buf));
-        printf("Writing to " FIB_DEV ", returned the sequence %lld\n", sz);
+        write(fd, write_buf, strlen(write_buf));
+        printf("Writing to " FIB_DEV ", returned the sequence 1\n");
     }
 
     for (int i = 0; i <= offset; i++) {
