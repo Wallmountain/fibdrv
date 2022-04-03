@@ -12,7 +12,6 @@ int main()
     long long sz;
 
     char buf[1];
-    char write_buf[] = "testing writing";
     int offset = 100; /* TODO: try test something bigger than the limit */
 
     int fd = open(FIB_DEV, O_RDWR);
@@ -22,7 +21,6 @@ int main()
     }
 
     for (int i = 0; i <= offset; i++) {
-        write(fd, write_buf, strlen(write_buf));
         printf("Writing to " FIB_DEV ", returned the sequence 1\n");
     }
 

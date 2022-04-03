@@ -6,7 +6,10 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/slab.h>
+#include <linux/uaccess.h>
 #include <stddef.h>
+#include "bnum.h"
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("National Cheng Kung University, Taiwan");
 MODULE_DESCRIPTION("Fibonacci engine driver");
@@ -17,7 +20,7 @@ MODULE_VERSION("0.1");
 /* MAX_LENGTH is set to 92 because
  * ssize_t can't fit the number > 92
  */
-#define MAX_LENGTH 92
+#define MAX_LENGTH 1000
 
 static ktime_t kt;
 static dev_t fib_dev = 0;
@@ -86,13 +89,59 @@ static long long fib_fast_doubling_sequence_clz(long long k)
     return f[0];
 }
 
+bnum *fib_fast_doubling_sequence_bn(long long k)
+{
+    bnum *F = kmalloc(sizeof(bnum), GFP_KERNEL);
+    bnum f, A, B;
+    bnum_init(F);
+    bnum_init(&f);
+    bnum_init(&A);
+    bnum_init(&B);
+
+    BNUM_ALLOC(F, 1);
+    F->size = 1;
+    BNUM_ALLOC(&f, 1);
+    f.size = 1;
+    f.ptr[0] = 1;
+
+    for (long long mask = 1 << (31 - __builtin_clz(k)); mask; mask >>= 1) {
+        bnum_lshift(&A, &f);
+        bnum_sub(&B, &A, F);
+        bnum_mul(&A, &B, F);
+        bnum_mul(&B, F, F);
+        bnum_swap(*F, A);
+        bnum_mul(&A, &f, &f);
+        bnum_add(&f, &A, &B);
+        if (mask & k) {
+            bnum_add(&A, &f, F);
+            bnum_swap(*F, f);
+            bnum_swap(f, A);
+        }
+    }
+    bnum_free(f);
+    bnum_free(A);
+    bnum_free(B);
+    return F;
+}
+
+static size_t llfunc = 3;
 static long long (*fib_func[])(long long) = {
     fib_sequence, fib_fast_doubling_sequence, fib_fast_doubling_sequence_clz};
 
+static bnum *(*fib_func_bn[])(long long) = {fib_fast_doubling_sequence_bn};
 static long long fib_time_proxy(long long k, size_t func_count)
 {
     kt = ktime_get();
     long long result = (fib_func[func_count])(k);
+    kt = ktime_sub(ktime_get(), kt);
+
+    return result;
+}
+
+static bnum *fib_time_proxy_bn(long long k, size_t func_count)
+{
+    kt = ktime_get();
+    bnum *result = (fib_func_bn[func_count - llfunc])(k);
     kt = ktime_sub(ktime_get(), kt);
 
     return result;
@@ -119,7 +168,16 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_time_proxy(*offset, size);
+    if (size < 3)
+        return (ssize_t) fib_time_proxy(*offset, size);
+    else {
+        bnum *bn = fib_time_proxy_bn(*offset, size);
+        ssize_t len = (bn->size + 1) >> 1;
+        copy_to_user(buf, bn->ptr, len);
+        bnum_free(*bn);
+        kfree(bn);
+        return len;
+    }
 }
 
 /* write operation is skipped */
